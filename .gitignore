@@ -1,0 +1,14 @@
+build
+dist
+
+*.pyc
+*.log
+.env
+.venv
+.venv_* 
+.pylintrc
+
+
+# VSCode
+.idea
+.vscode
