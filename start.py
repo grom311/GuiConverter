@@ -7,14 +7,15 @@ from PyQt5.QtGui import QIntValidator
 from external.utils import Convert
 
 FORMATS = ['jpg', 'webp', 'bmp']
-SRC_EXTENTIONS = {'jpg': ['jpg', 'jpeg', 'jfif'],
-                  'heic': ['heic']
-                }
+SRC_EXTENTIONS = {
+    'jpg': ['jpg', 'jpeg', 'jfif'],
+    'heic': ['heic'],
+}
 
 class MyTool(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__()
-        self.img_path = resource_path('Icons\Files.ico')
+        self.img_path = resource_path('Icons/rose1.ico')
         self.setWindowIcon(QtGui.QIcon(self.img_path))
         self.fname = ''
         self.path_directory = ''
