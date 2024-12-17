@@ -1,19 +1,22 @@
 from concurrent.futures import ThreadPoolExecutor
+import functools
 import os
 from pathlib import Path
+from typing import Optional
 from PIL import Image
 from pillow_heif import register_heif_opener
+import logging
 
 # RESIZE = (1500, 2250)  # нада размеры как то подбирать - так не пойдет
 # QUALITY = 10
 # PATH = "E:/Temp/img/"
 
 
-register_heif_opener()
-
-
 class Convert:
+    """Object convert files."""
+
     def __init__(self, path: str, save_path: str, quality: int, resize: tuple,  format: str):
+        register_heif_opener()
         self._path = os.path.normpath(path)
         self._save_path = os.path.normpath(save_path) if save_path else self._path
         self._quality = quality
@@ -24,57 +27,72 @@ class Convert:
         """
             Convert image to WebP.
         """
-        res_file = self._file_path(source, 'webp')
-        image = Image.open(source)
-        resize_true = all(self._resize)
-        new_image = image.resize(self._resize) if resize_true else image
+        image: Image = self.open_image(source)
+        if image:
+            res_file = self._file_path(source, 'webp')
+            new_image = image
+            if any(self._resize):
+                new_image = self._resize_image(image)
 
-        new_image.save(
-            res_file,
-            format="webp",
-            optimize=True,
-            quality=self._quality,
-        )
-
-        return res_file
+            new_image.save(
+                res_file,
+                format="webp",
+                optimize=True,
+                quality=self._quality,
+            )
+            return res_file
+        return None
 
     def convert_to_bmp(self, source: Path):
         """
             Convert image to bmp.
         """
-        res_file = self._file_path(source, 'bmp')
 
-        image = Image.open(source)
-        resize_true = all(self._resize)
-        new_image = image.resize(self._resize) if resize_true else image
+        image: Image = self.open_image(source)
+        if image:
+            res_file = self._file_path(source, 'bmp')
+            new_image = image
+            if any(self._resize):
+                new_image = self._resize_image(image)
 
-        new_image.save(
-            res_file,
-            format="bmp",
-            optimize=True,
-            quality=self._quality,
-        )
-
-        return res_file
+            new_image.save(
+                res_file,
+                format="bmp",
+                optimize=True,
+                quality=self._quality,
+            )
+            return res_file
+        return None
 
     def convert_to_jpg(self, source: Path):
         """
             Convert image to jpg.
         """
-        res_file = self._file_path(source, 'jpg')
+        # E:/Foto/ROSE № 1/САЙТ/новый год 2025/101224/IMG_2478.HEIC
+        image: Image = self.open_image(source)
+        if image:
+            res_file = self._file_path(source, 'jpg')
+            new_image = image
 
-        image = Image.open(source)
-        resize_true = all(self._resize)
-        new_image = image.resize(self._resize) if resize_true else image
+            if any(self._resize):
+                new_image = self._resize_image(image)
+            new_image.save(
+                res_file,
+                format="jpeg",
+                optimize=True,
+                quality=self._quality,
+            )
+            return res_file
+        return None
 
-        new_image.save(
-            res_file,
-            format="jpeg",
-            optimize=True,
-            quality=self._quality,
-        )
-
-        return res_file
+    def _resize_image(self, image: Image) -> Image:
+        """Resize Image."""
+        height, width = image.size
+        if self._resize[0]:
+            scale = self._resize[0] / min(height, width)
+        else:
+            scale = self._resize[1] / max(height, width)
+        return image.resize((int(height * scale), int(width * scale)))
 
     def _file_path(self, source: Path, ext: str) -> str:
         """
@@ -105,6 +123,15 @@ class Convert:
                 paths.extend(_path.glob(f"**/*.{frm}"))
         return paths
 
+    def open_image(self, source: Path) -> Optional[Image]: # type: ignore
+        """"""
+        try:
+            image = Image.open(source)
+            return image
+        except Exception as exc:
+            logging.exception(f'Error: {exc}')
+        return None
+
     def start_convert(self, inp_formats: list[str]) -> dict:
         """implementation by ThreadPoolExecutor."""
         paths = self.paths(inp_formats)
@@ -112,6 +139,7 @@ class Convert:
         with ThreadPoolExecutor(max_workers=None) as executor:
             results = list(executor.map(fn_name, paths))
         cnt = 0
-        for _ in results:
-            cnt += 1
+        for res in results:
+            if res:
+                cnt += 1
         return {'count': cnt}

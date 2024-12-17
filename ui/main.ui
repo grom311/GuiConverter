@@ -38,7 +38,7 @@
       <item>
        <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>Высота. Не указывая - размер остается тот же.</string>
+         <string>Ширина. Не указывая - размер остается тот же.</string>
         </property>
        </widget>
       </item>
@@ -56,7 +56,7 @@
       <item>
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Ширина. Не указывая - размер останется тот же.</string>
+         <string>Высота. Не указывая - размер остается тот же.</string>
         </property>
        </widget>
       </item>
@@ -81,7 +81,7 @@
       <item>
        <widget class="QLineEdit" name="lineEdit_5">
         <property name="text">
-         <string>100</string>
+         <string>80</string>
         </property>
        </widget>
       </item>

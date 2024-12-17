@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import threading
 from PyQt5 import QtWidgets, QtGui
 import ui.main as MainWindow
 import subprocess, os,platform,datetime,base64,json
@@ -19,6 +20,7 @@ class MyTool(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(self.img_path))
         self.fname = ''
         self.path_directory = ''
+        self.res_convert = {}
         self.ui = MainWindow.Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -32,12 +34,15 @@ class MyTool(QtWidgets.QMainWindow):
         """
         self.setStyleSheet(stylesheet)
         self.onlyInt = QIntValidator()
+        self.onlyInt_5 = QIntValidator()
+        self.onlyInt_5.setRange(0, 100)
 
         self.ui.lineEdit_3.setValidator(self.onlyInt)
         self.ui.lineEdit_4.setValidator(self.onlyInt)
         # установить рэндж 0-100
-        self.ui.lineEdit_5.setValidator(self.onlyInt)
-
+        self.ui.lineEdit_5.setValidator(self.onlyInt_5)
+        # self.ui.lineEdit.setText('E:/Foto/ROSE № 1/САЙТ/новый год 2025/101224/IMG_2478.HEIC')
+        # self.ui.lineEdit_2.setText('E:/Temp/test__12')
         self.ui.comboBox.addItems(FORMATS)
         # self.ui.pushButton_2.setEnabled(False)
         # self.ui.pushButton.setEnabled(False)
@@ -48,6 +53,19 @@ class MyTool(QtWidgets.QMainWindow):
         self.ui.toolButton_3.clicked.connect(self.set_file_path)
 
 # E:\Temp\img\img_src\024.JPG E:\Temp\img\res_qqqqqq\
+    def convert_thread(self, height, width):
+        self.res_convert = {'count': 0}
+        for frm in SRC_EXTENTIONS.values():
+            converter = Convert(
+                self.ui.lineEdit.text(),
+                self.ui.lineEdit_2.text(),
+                int(self.ui.lineEdit_5.text()),
+                (width, height),
+                self.ui.comboBox.currentText(),
+            )
+            res_frm = converter.start_convert(frm)
+            self.res_convert['count'] += res_frm['count']
+
     def run_clicked(self):
         lineedit_text = self.ui.lineEdit.text()
         lineedit2_text = self.ui.lineEdit_2.text()
@@ -57,18 +75,14 @@ class MyTool(QtWidgets.QMainWindow):
             lineedit4_text = int(self.ui.lineEdit_4.text()) if self.ui.lineEdit_4.text() else None
             self.ui.pushButton.setEnabled(False)
             self.ui.pushButton_2.setEnabled(False)
-            res = {'count': 0}
-            for frm in SRC_EXTENTIONS.values():
-                converter = Convert(
-                    self.ui.lineEdit.text(),
-                    self.ui.lineEdit_2.text(),
-                    int(self.ui.lineEdit_5.text()),
-                    (lineedit3_text, lineedit4_text),
-                    self.ui.comboBox.currentText(),
-                )
-                res_frm = converter.start_convert(frm)
-                res['count'] += res_frm['count']
-            QtWidgets.QMessageBox.about(self, "Result convert", f'Count convert files: {res["count"]}')
+            t = threading.Thread(
+                name='convert-daemon',
+                target=self.convert_thread,
+                args=(lineedit4_text, lineedit3_text),
+            )
+            t.start()
+            t.join()
+            QtWidgets.QMessageBox.about(self, "Result convert", f'Count convert files: {self.res_convert["count"]}')
         else:
             QtWidgets.QMessageBox.about(self, "Options not correct", "Please insert all options")
         self.ui.pushButton.setEnabled(True)
